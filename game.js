@@ -1,11 +1,10 @@
 /**
  * Created by tomdt on 6/23/2017.
  */
-
-const xWidth = 600;
-const yHeight = 600;
-const moveSpeedX = 2;
-const moveSpeedY = 2;
+const WIDTH = 600;
+const HEIGHT = 600;
+const moveSpeedX = 5;
+const moveSpeedY = 5;
 
 const xSpriteOffset = 0;
 const ySpriteOffset = 0;
@@ -23,82 +22,129 @@ let xPosition = 300;
 let yPosition = 500;
 
 let keyState = {};
+let playerMissiles = [];
+let cannonsReady = true;
 
 
-const canvas = document.getElementById("canvas");
-const canvasContext = canvas.getContext("2d");
+const CANVAS = document.getElementById("canvas");
+const CTX = CANVAS.getContext("2d");
 
 //Start game loop
-window.onload = function(){
-     // const canvas = document.getElementById("canvas");
-     // const canvasContext = canvas.getContext("2d");
-    document.addEventListener("keydown",handleKeyPress,true);
+window.onload = ( ) => {
+     // const CANVAS = document.getElementById("CANVAS");
+     // const CTX = CANVAS.getContext("2d");
+       initBackground();
+
+
+        document.addEventListener("keydown",handleKeyPress,true);
+        document.addEventListener("keyup", handleKeyUp, true);
     
-    setInterval(gameLoop, 33); // roughly 30 FPS
+        setInterval(gameLoop, 33); // roughly 30 FPS
 
 };
 
-function handleKeyPress(keyEvent){
-    switch(keyEvent.keyCode){
-        //left keys
-        case 37:
-        case 65:
-            if(isGameRunning && !isPaused){
-                xPosition=  xPosition - moveSpeedX; // up is negative
-                if (xPosition - xSpriteOffset < 0){  // bounding left movement to canvas edge
-                    xPosition = 0 + xSpriteOffset;
-                }
+
+function handleKeyState(){
+    if(keyState.left){
+        if(isGameRunning && !isPaused){
+            xPosition=  xPosition - moveSpeedX; // up is negative
+            if (xPosition  < 0){  // bounding left movement to CANVAS edge
+                xPosition = 0 ;
             }
+        }
+    }
+    if(keyState.up){
 
-            break;
-        // up keys
-        case 38:
-        case 87:
-            if(isGameRunning && !isPaused){
-                yPosition= yPosition - moveSpeedY; // up is negative
-                if (yPosition - ySpriteOffset < yMoveLimit){
-                    yPosition = yMoveLimit + ySpriteOffset;
-                }
+        if(isGameRunning && !isPaused){
+            yPosition= yPosition - moveSpeedY; // up is negative
+            if (yPosition - ySpriteOffset < yMoveLimit){
+                yPosition = yMoveLimit + ySpriteOffset;
             }
-            break;
-
-        //right keys
-        case 39:
-        case 68:
-            if(isGameRunning && !isPaused){
-                xPosition=  xPosition + moveSpeedX; // up is negative
-                if (xPosition + xSpriteOffset > xWidth){  // bounding left movement to canvas edge
-                    xPosition = 0 - xSpriteOffset;
-                }
+        }
+    }
+    if(keyState.right){
+        if(isGameRunning && !isPaused){
+            xPosition=  xPosition + moveSpeedX; // up is negative
+            if (xPosition + spriteWidth > WIDTH){  // bounding right movement to CANVAS edge
+                xPosition =  WIDTH - spriteWidth;
             }
-            break;
-
-        //down keys
-        case 40:
-        case 83:
-            if(isGameRunning && !isPaused){
-                yPosition= yPosition + moveSpeedY; // up is negative
-                if (yPosition + ySpriteOffset > yHeight){
-                    yPosition = yMoveLimit - ySpriteOffset;
-                }
-            }
-             break;
-
-        //Start
-
-        //Action
+        }
     }
 
+    if(keyState.down){
+        if(isGameRunning && !isPaused){
+            yPosition= yPosition + moveSpeedY; // up is negative
+            if (yPosition + spriteHeight > HEIGHT){
+                yPosition = HEIGHT - spriteHeight;
+            }
+        }
+    }
 
+    if(keyState.action){
+        playerAttack();
+    }
+    if(keyState.action == false){
+        cannonsReady = true;
+
+    }
 }
 function gameLoop(){
+    handleKeyState();
+    drawBackground(CTX);
 
-
-
-    //background
-    canvasContext.fillStyle = "black";
-    canvasContext.fillRect(0,0, xWidth, yHeight);
     //player sprite
-    canvasContext.fillStyle = "red";
-    canvasContext.fillRect(xPosition,yPosition, spriteWidth, spriteHeight);
+    //CTX.fillStyle = "red";
+    //CTX.fillRect(xPosition,yPosition, spriteWidth, spriteHeight);
+
+    drawPlayer(CTX);
+
+    //players attacks
+    for (let i =0; i< playerMissiles.length; i++){
+        CTX.fillStyle = "#FFFFFF";
+        CTX.fillRect(playerMissiles[i].x, playerMissiles[i].y, 2, 10);
+    }
+    updateMissiles()
+
+}
+
+function drawPlayer(ctx){
+    let xStart = xPosition;
+    let yStart = yPosition + spriteHeight;
+    ctx.fillStyle = "red";
+    ctx.beginPath();
+    ctx.moveTo(xStart,yStart); // bottom left corner
+    ctx.lineTo(xStart + (spriteWidth/2), yPosition);
+    ctx.lineTo(xStart + spriteWidth, yStart);
+    ctx.lineTo(xStart +(spriteWidth/2), yPosition +(spriteHeight/2));
+    ctx.lineTo(xStart,yStart);
+    ctx.fill();
+
+}
+
+function updateMissiles(){
+    var deleteList = [];
+    //move missles up screen
+    for (let i =0; i< playerMissiles.length; i++){
+        playerMissiles[i].y -= 30;
+        if(playerMissiles[i].y < 0){
+            deleteList.push(i);
+        }
+    }
+    // TODO - detect hit
+
+
+    // delete expired missiles
+    for(let i =0; i < deleteList.length; i ++){
+        playerMissiles.splice(deleteList[i],1);
+    }
+
+}
+function playerAttack(){
+    console.log("PEW PEW!");
+if(playerMissiles.length < 3 && cannonsReady){
+    playerMissiles.push({x: xPosition +(spriteWidth/ 2) -1 , y: yPosition -10}); // start missle halfway across the sprite  - half of sprite witdh
+    cannonsReady = false;
+
+}
+
 }
