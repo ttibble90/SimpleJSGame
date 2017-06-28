@@ -3,8 +3,9 @@
  */
 const WIDTH = 600;
 const HEIGHT = 600;
-const moveSpeedX = 5;
+const moveSpeedX = 6;
 const moveSpeedY = 5;
+const missileSpeed = 25;
 
 const xSpriteOffset = 0;
 const ySpriteOffset = 0;
@@ -23,6 +24,7 @@ let yPosition = 500;
 
 let keyState = {};
 let playerMissiles = [];
+let enemyList = [];
 let cannonsReady = true;
 
 
@@ -36,6 +38,9 @@ window.onload = ( ) => {
        initBackground();
 
 
+        //todo move this
+        generateWave(1);
+        populateGridNow();
         document.addEventListener("keydown",handleKeyPress,true);
         document.addEventListener("keyup", handleKeyUp, true);
     
@@ -90,6 +95,7 @@ function handleKeyState(){
 }
 function gameLoop(){
     handleKeyState();
+    processEnemyMovement();
     drawBackground(CTX);
 
     //player sprite
@@ -97,8 +103,9 @@ function gameLoop(){
     //CTX.fillRect(xPosition,yPosition, spriteWidth, spriteHeight);
 
     drawPlayer(CTX);
+    drawEnemies(CTX);
 
-    //players attacks
+    //player missles
     for (let i =0; i< playerMissiles.length; i++){
         CTX.fillStyle = "#FFFFFF";
         CTX.fillRect(playerMissiles[i].x, playerMissiles[i].y, 2, 10);
@@ -125,10 +132,33 @@ function updateMissiles(){
     var deleteList = [];
     //move missles up screen
     for (let i =0; i< playerMissiles.length; i++){
-        playerMissiles[i].y -= 30;
+        playerMissiles[i].y -= missileSpeed;
         if(playerMissiles[i].y < 0){
             deleteList.push(i);
         }
+
+        // does missle hit target
+        for (let j = 0; j < enemyList.length; j++){
+            if(playerMissiles[i].x +2 > enemyList[j].currentPos.x && // right edge of missile  intercepts left edge of enemy
+                playerMissiles[i].x < enemyList[j].currentPos.x + ENEMYWIDTH){ // left edge of missle intecepts right edge of enemy
+
+                if(playerMissiles[i].y <= enemyList[j].currentPos.y  + ENEMYWIDTH &&                     // does missle line hit leading edge of enemy?
+                   playerMissiles[i].y + missileSpeed >= enemyList[j].currentPos.y + ENEMYWIDTH){     // previous spot
+                    console.log(" HIT!!!")
+                    deleteList.push(i);
+                    deleteEnemy(j);
+                }
+                 else if (playerMissiles[i].y <= enemyList[j].currentPos.y &&                     // does missle line hit leading edge of enemy?
+                    playerMissiles[i].y + missileSpeed >= enemyList[j].currentPos.y){                           // does missle hit trailing edge of the enemy somehow?
+                    console.log(" HIT!!!")
+                    deleteList.push(i);
+                    deleteEnemy(j);
+                 }
+
+            }
+
+        }
+
     }
     // TODO - detect hit
 
